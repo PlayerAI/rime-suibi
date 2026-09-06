@@ -1,0 +1,35 @@
+{
+  "status": "passed",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "rime_version": "1.17.0",
+  "tests": [
+    "suibi_pinyin: ordinary candidates equal unmodified Rime pipeline",
+    "suibi_pinyin: normal phrase + Space commit",
+    "suibi_pinyin: hard stroke filter + simplified only",
+    "suibi_pinyin: Return confirms auxiliary candidate",
+    "suibi_pinyin: digit selection, paging, long prefixes, Shift safety, Space",
+    "suibi_pinyin: invalid stroke ignored; BackSpace restores normal sound",
+    "suibi_pinyin: no-match does not commit raw code; Escape cancels",
+    "suibi_pinyin: auxiliary restricted to one complete sound",
+    "suibi_pinyin: ASCII mode passes through",
+    "suibi_double_pinyin: ordinary candidates equal unmodified Rime pipeline",
+    "suibi_double_pinyin: normal phrase + Space commit",
+    "suibi_double_pinyin: hard stroke filter + simplified only",
+    "suibi_double_pinyin: Return confirms auxiliary candidate",
+    "suibi_double_pinyin: digit selection, paging, long prefixes, Shift safety, Space",
+    "suibi_double_pinyin: invalid stroke ignored; BackSpace restores normal sound",
+    "suibi_double_pinyin: no-match does not commit raw code; Escape cancels",
+    "suibi_double_pinyin: auxiliary restricted to one complete sound",
+    "suibi_double_pinyin: ASCII mode passes through",
+    "polyphonic readings and full-pinyin aliases"
+  ],
+  "test_count": 19,
+  "deployment_seconds": 1.942,
+  "query_latency_ms": {
+    "median": 0.909,
+    "p95": 1.999,
+    "note": "Warm sessions, entire short query + first page; not GUI latency"
+  },
+  "sandbox": "isolated .build/engine-* directory (local path omitted)",
+  "verified_date": "2026-09-06"
+}

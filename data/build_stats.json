@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "allowed_characters": 8105,
+  "characters_with_readings": 8104,
+  "character_readings": 8676,
+  "pinyin_syllables": 410,
+  "double_pinyin_codes": 419,
+  "words": 540478,
+  "excluded_upstream_words": 2610,
+  "missing_readings": [
+    "呣"
+  ]
+}

@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.png binary
+*.zip binary
+
+# Pinned source hashes cover the original bytes, including line endings.
+data/sources/* -text
+data/natural_double_pinyin.json -text
+data/microsoft_double_pinyin.json -text

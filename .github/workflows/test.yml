@@ -1,0 +1,40 @@
+name: Verify Suibi
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python tools/build.py --fetch --check
+      - run: python -m unittest discover -s tests -v
+      - run: python tools/prepare_windows_runtime.py
+      - run: python tools/test_engine.py --library .cache/runtime/dist/lib/rime.dll --output .build/windows-results.json
+      - run: python tools/package.py
+  debian:
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - run: apt-get update && apt-get install -y git ca-certificates python3 python3-venv librime1t64 librime-plugin-lua
+      - uses: actions/checkout@v4
+      - run: python3 -m venv .build/venv
+      - run: .build/venv/bin/pip install -r requirements-dev.txt
+      - run: .build/venv/bin/python tools/build.py --fetch --check
+      - run: .build/venv/bin/python -m unittest discover -s tests -v
+      - run: .build/venv/bin/python tools/test_engine.py --library /usr/lib/x86_64-linux-gnu/librime.so.1 --plugin /usr/lib/x86_64-linux-gnu/rime-plugins/librime-lua.so --output .build/debian-results.json
+  arch-compatibility:
+    runs-on: ubuntu-latest
+    container: archlinux:base
+    steps:
+      - run: pacman -Syu --noconfirm git python python-pip librime
+      - uses: actions/checkout@v4
+      - run: python -m venv .build/venv
+      - run: .build/venv/bin/pip install -r requirements-dev.txt
+      - run: .build/venv/bin/python tools/build.py --fetch --check
+      - run: .build/venv/bin/python -m unittest discover -s tests -v
+      - run: .build/venv/bin/python tools/test_engine.py --library /usr/lib/librime.so.1 --plugin /usr/lib/rime-plugins/librime-lua.so --output .build/arch-results.json

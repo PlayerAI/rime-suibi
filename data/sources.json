@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "rime_ice_commit": "fbb516b2786e4d5444383706d13c31c2e4d10c08",
+  "official_strokes_url": "https://www.moe.gov.cn/jyb_sjzl/ziliao/A19/202103/W020210318300204215237.pdf",
+  "official_pdf_sha256": "0ff0890afc34c5e486edeebafb05350dec69a7bf0d1d75044d7d3f7b722ec3d0",
+  "inputs": [
+    {
+      "path": "data/sources/strokes.tsv",
+      "sha256": "0adac0d69d8014e0811fc76634de20640d38093c8625e7e68be94cdc3f6f504e"
+    },
+    {
+      "path": "data/sources/rime_ice_chars.dict.yaml",
+      "sha256": "d9f36985054f485d8ef1ddf0d8505eaf15c2f702e2eda9d5e908c7a7bcfa70c1"
+    },
+    {
+      "path": "data/natural_double_pinyin.json",
+      "sha256": "fbddd7ba5bb2012add063fb47f562e981350019565dc8e19a2aa2bb4ef4f6431"
+    },
+    {
+      "path": "data/microsoft_double_pinyin.json",
+      "sha256": "8af06ce558cfa9a62c38576bda0617608788ab40173d5f04a065e254c16fb7ff"
+    }
+  ],
+  "base_dictionary": {
+    "url": "https://raw.githubusercontent.com/iDvel/rime-ice/fbb516b2786e4d5444383706d13c31c2e4d10c08/cn_dicts/base.dict.yaml",
+    "sha256": "568373deeefd02283e38639e7c6230be2c596ed1e8d47e4ea1c232cee85066ef"
+  }
+}

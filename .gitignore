@@ -1,0 +1,16 @@
+# Local builds, Rime state, and tools
+.cache/
+.build/
+dist/*
+!dist/rime-suibi-pinyin-0.2.0.zip
+!dist/rime-suibi-double-pinyin-0.2.0.zip
+!dist/rime-suibi-mspy-0.2.0.zip
+!dist/SHA256SUMS
+__pycache__/
+*.pyc
+*.userdb/
+*.userdb.txt
+*.log
+*.ppk
+*.pem
+*.key
