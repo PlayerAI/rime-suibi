@@ -3,6 +3,6 @@
 *.zip binary
 
 # Pinned source hashes cover the original bytes, including line endings.
-data/sources/* -text
-data/natural_double_pinyin.json -text
+data/sources/* -text whitespace=cr-at-eol
+data/natural_double_pinyin.json -text whitespace=cr-at-eol
 data/microsoft_double_pinyin.json -text
