@@ -3,10 +3,10 @@
 schema:
   schema_id: suibi_pinyin
   name: 随笔全拼
-  version: 0.2.0
+  version: 0.3.0
   author:
   - Suibi contributors
-  description: 简体拼音输入，反引号后按 h/s/p/n/z 补充单字笔画。
+  description: 简体拼音输入，反引号后按 h/s/p/n/z 补充单字或词语首字笔画。
 switches:
 - name: ascii_mode
   reset: 0
@@ -34,7 +34,6 @@ engine:
   translators:
   - lua_translator@*suibi.translator
   - punct_translator
-  - script_translator
   filters:
   - lua_filter@*suibi.filter
   - uniquifier

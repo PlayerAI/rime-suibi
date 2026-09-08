@@ -2,7 +2,7 @@
 
 **拼音为主，重码补笔。**
 
-随笔拼音是基于 Rime 的简体中文输入方案，提供全拼、自然码双拼和微软双拼。在找不到目标单字时，按反引号，再按笔顺补几笔，缩小候选范围。
+随笔拼音是基于 Rime 的简体中文输入方案，提供全拼、自然码双拼和微软双拼。在找不到目标单字或词语时，按反引号，再按单字或词语首字的笔顺补几笔，缩小候选范围。
 
 | 输入方式 | 示例 | 含义 |
 | --- | --- | --- |
@@ -11,6 +11,7 @@
 | 随笔微软双拼 | `vsgo` / `y;` | 输入“中国” / ying 音节 |
 | 全拼辅助 | `` zhong`phh `` | 读作 zhong，前三笔为撇横横的单字 |
 | 双拼辅助 | `` vs`phh `` | 自然码、微软双拼均可用 |
+| 词语辅助（三种方案） | `` jilu`n `` / `` jilu`z `` | 按首字区分“记录”和“纪录” |
 | 纯笔画反查 | `` `szhs `` | 找到“中”，候选旁显示 `(zhong)` |
 
 笔画键：`h` 横/提、`s` 竖/竖钩、`p` 撇、`n` 点/捺、`z` 折。
@@ -18,20 +19,20 @@
 ## 当前功能
 
 - 全拼、自然码双拼、微软双拼共用简体词库及笔画数据。
-- 正常输入词语和句子，单个完整音节可按需追加笔画辅助。
+- 正常输入词语和句子，单个完整音节或完整词语编码可按需追加笔画辅助。
 - 辅助候选必须同时满足读音、简体字集和笔顺前缀条件；允许继续输入超过三笔。
 - Windows 使用小狼毫，CachyOS 与 Debian 使用 Fcitx5-Rime。
 - 不知道读音时，直接按反引号，再按笔顺输入五类笔画，候选旁显示完整拼音。
 
 ## 安装与试用
 
-当前版本 **v0.2.0**。选择自己熟悉的方案下载：
+当前版本 **v0.3.0**，新增词语首字笔画辅助，保留原生候选排序和选词学习。升级后需重新部署；安装器会同时更新方案 YAML 与 Lua。选择自己熟悉的方案下载：
 
 | 方案 | 独立安装包 | 方案标识 |
 | --- | --- | --- |
-| 随笔全拼 | [下载 ZIP](https://github.com/PlayerAI/rime-suibi/raw/refs/heads/main/dist/rime-suibi-pinyin-0.2.0.zip) | `suibi_pinyin` |
-| 随笔双拼（自然码） | [下载 ZIP](https://github.com/PlayerAI/rime-suibi/raw/refs/heads/main/dist/rime-suibi-double-pinyin-0.2.0.zip) | `suibi_double_pinyin` |
-| 随笔微软双拼 | [下载 ZIP](https://github.com/PlayerAI/rime-suibi/raw/refs/heads/main/dist/rime-suibi-mspy-0.2.0.zip) | `suibi_mspy` |
+| 随笔全拼 | [下载 ZIP](https://github.com/PlayerAI/rime-suibi/raw/refs/heads/main/dist/rime-suibi-pinyin-0.3.0.zip) | `suibi_pinyin` |
+| 随笔双拼（自然码） | [下载 ZIP](https://github.com/PlayerAI/rime-suibi/raw/refs/heads/main/dist/rime-suibi-double-pinyin-0.3.0.zip) | `suibi_double_pinyin` |
+| 随笔微软双拼 | [下载 ZIP](https://github.com/PlayerAI/rime-suibi/raw/refs/heads/main/dist/rime-suibi-mspy-0.3.0.zip) | `suibi_mspy` |
 
 每包均适用于 Windows、CachyOS 和 Debian，包含所选方案、完整词库、Lua 文件与源码，无需另外安装其他随笔方案。[SHA-256 校验清单](dist/SHA256SUMS)。
 
@@ -64,6 +65,10 @@ python tools/install.py --scheme suibi_mspy --enable
 
 正常输入时沿用 Rime 拼音组词、整句和用户词频学习。想找单字时，输入一个完整音节（双拼为两键），按反引号，再按目标字的**笔顺从头**补笔。例如 `` zhong`phh `` 或 `` vs`phh `` 可找“重”“种”等字。
 
+词语辅助：先输入完整词语的全拼或双拼，按反引号，再输入**第一个字从头的笔顺**。例如三种方案均可输入 `` jilu`n `` 查“记录”、`` jilu`z `` 查“纪录”；三字及更长的完整候选也可筛选。候选旁标注“首字”。首字相同的“权利／权力”仍需选词。
+
+词语辅助保留 Rime 原生排序与用户词频学习，只筛选覆盖全部输入的完整候选；不使用简拼、未完成音节或补全词。全拼编码若本身是单个音节，保留单字模式；例如查“西安”需输入 `` xi'an`h ``。已分段选定前面的字词时，先完成或取消当前输入，再对整个词使用辅助。
+
 - `Space` / `Enter` 确认候选，`1`—`5` 选字，`-` / `=` 翻页。
 - `Backspace` 逐笔删除；删掉反引号后恢复普通拼音。`Esc` 取消本次输入。
 - 没有拼音时输入 `` `szhs ``，可以找到“中”，候选旁显示 `(zhong)`，选择后只输入“中”。多音字列出词库已有读音，不标声调。
@@ -76,9 +81,9 @@ python tools/install.py --scheme suibi_mspy --enable
 
 字集限定为《通用规范汉字表》的 8,105 字（含简繁共用字），其中 **8,104 字、8,676 个字音、540,478 条词语**进入拼音词库。来源缺少“呣”的可用普通拼音读音，笔画反查仍可找到它，旁注“读音未收录”。
 
-小狼毫 0.17.4 / librime 1.13.1 和 Debian 13 / WSL2 各通过 28 项实际引擎检查，另有 12 项核心与安装测试通过；微软双拼 v0.2.0 已在本机小狼毫安装并成功部署。详情见 [验证记录](docs/STATUS.md)。CachyOS 尚未在实机桌面测试。
+历史 v0.2.0 在小狼毫 0.17.4 / librime 1.13.1 和 Debian 13 / WSL2 各通过 28 项实际引擎检查，另有 12 项核心与安装测试通过；微软双拼 v0.2.0 已在本机小狼毫安装并成功部署。详情见 [验证记录](docs/STATUS.md)。v0.3.0 已在 CachyOS / librime 1.17.0 通过 43 项隔离引擎检查及 14 项核心与安装测试；桌面应用集成仍待人工试用。
 
-辅助和反查候选按静态字频排序，暂不学习个人选字习惯；普通拼音继续使用 Rime 用户词典学习。这里“学拼音”指通过候选注释了解读音。当前不支持词语整串辅码、字表外汉字或声调标注。
+单字辅助和反查候选按静态字频排序，暂不学习个人选字习惯；普通拼音及词语辅助使用 Rime 用户词典学习。这里“学拼音”指通过候选注释了解读音。当前不支持指定任意字位补笔、字表外汉字或声调标注。
 
 ## 开发
 

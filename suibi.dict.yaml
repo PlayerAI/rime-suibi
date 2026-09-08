@@ -2,7 +2,7 @@
 # GPL-3.0; derived from iDvel/rime-ice. See NOTICE.md.
 ---
 name: suibi
-version: '0.2.0'
+version: '0.3.0'
 sort: by_weight
 import_tables:
   - cn_dicts/suibi_chars

@@ -134,6 +134,15 @@ class Rime:
     def input(self):
         return (self.bind("get_input", C.c_char_p, C.c_size_t)(self.session) or b"").decode()
 
+    def preedit(self):
+        obj = sized(Context)
+        if not self.bind("get_context", C.c_int, C.c_size_t, C.POINTER(Context))(self.session, C.byref(obj)):
+            return ""
+        try:
+            return (obj.composition.preedit or b"").decode()
+        finally:
+            self.bind("free_context", C.c_int, C.POINTER(Context))(C.byref(obj))
+
     def candidates(self, limit=10000):
         iterator = Iterator()
         result = []

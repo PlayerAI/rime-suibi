@@ -1,6 +1,8 @@
-# 安装随笔 v0.2.0
+# 安装随笔 v0.3.0
 
-每种方案各有一个独立包，每包均适用于 Windows、CachyOS 和 Debian。安装前需有支持 librime-lua 模块的 Rime 前端。下列命令安装系统依赖；随笔文件本身安装到当前用户目录，无需管理员权限。选择全拼 `rime-suibi-pinyin-0.2.0.zip`、自然码 `rime-suibi-double-pinyin-0.2.0.zip` 或微软 `rime-suibi-mspy-0.2.0.zip`。下载源码或解压所选包后，在包含 README 的目录执行随笔安装命令。
+**v0.3.0 新增词语首字辅助。升级时执行安装命令后重新部署；更新需同时复制方案 YAML 和 Lua 文件。**
+
+每种方案各有一个独立包，每包均适用于 Windows、CachyOS 和 Debian。安装前需有支持 librime-lua 模块的 Rime 前端。下列命令安装系统依赖；随笔文件本身安装到当前用户目录，无需管理员权限。选择全拼 `rime-suibi-pinyin-0.3.0.zip`、自然码 `rime-suibi-double-pinyin-0.3.0.zip` 或微软 `rime-suibi-mspy-0.3.0.zip`。下载源码或解压所选包后，在包含 README 的目录执行随笔安装命令。
 
 ## Windows
 
@@ -29,7 +31,7 @@ sudo pacman -S --needed fcitx5 fcitx5-rime fcitx5-configtool fcitx5-gtk fcitx5-q
 python3 tools/install.py --enable
 ```
 
-当前 [Arch librime 包](https://archlinux.org/packages/extra/x86_64/librime/files/)包含 `rime-plugins/librime-lua.so`，无需另找独立 Lua 插件包。CachyOS 使用其兼容包的安装路线；本项目尚未在 CachyOS 桌面实测。
+当前 [Arch librime 包](https://archlinux.org/packages/extra/x86_64/librime/files/)包含 `rime-plugins/librime-lua.so`，无需另找独立 Lua 插件包。CachyOS 使用其兼容包的安装路线；当前源码已在 CachyOS 本机隔离引擎测试通过，桌面应用集成仍待人工验收。
 
 在桌面的输入法设置中启用 Fcitx5，在 Fcitx5 配置工具中添加“中州韵 / Rime”，再从 Fcitx5 的 Rime 菜单重新部署。Wayland 下的启动与应用集成遵循桌面环境配置，参见 [Fcitx5 官方设置说明](https://fcitx-im.org/wiki/Setup_Fcitx_5)，不要直接覆盖现有会话环境变量。
 
@@ -80,5 +82,7 @@ patch:
 若方案不存在，检查用户目录与 `default.custom.yaml`，并确认重新部署完成。若普通拼音可用但辅助无效，检查部署日志是否出现 Lua 模块加载错误，确认 `lua/suibi/` 完整、前端包含匹配的 librime-lua；不要混装来自不同版本的动态库。初次部署会编译约 54 万条词语，实际时间取决于设备。
 
 独立包中 `package.json` 指定默认安装方案，`--enable` 只启用该方案；保留此文件。源码目录中可传 `--scheme suibi_pinyin`、`--scheme suibi_double_pinyin` 或 `--scheme suibi_mspy`，省略则安装全部。手动复制不需要复制 `package.json`。各方案共享同版本的词库和 Lua 文件，建议保持版本一致。
+
+词语验收：三种方案均可输入 `` jilu`n `` 查“记录”，输入 `` jilu`z `` 查“纪录”。候选旁应显示“首字”，预编辑区显示已输入的笔画。Enter、Space、数字键均应只提交词语；退格删掉反引号恢复普通候选。
 
 反查验收：空输入时键入 `` `szhs ``，应可找到“中”及 `(zhong)` 注释；连续两个反引号输入一个字面反引号。

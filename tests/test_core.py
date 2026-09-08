@@ -80,10 +80,49 @@ class CoreTests(unittest.TestCase):
         for text in ["中國", "鐘", "你好國", "㐀", "𠮷"]:
             self.assertFalse(self.core.is_simplified(text), text)
 
+    def test_word_syntax_readings_and_boundaries(self):
+        for mode, sound in [("pinyin", "jilu"), ("double_pinyin", "jilu"),
+                            ("mspy", "jilu"), ("pinyin", "xi'an"),
+                            ("pinyin", "zhongguoren"), ("mspy", "y;gl")]:
+            self.assertEqual((sound, "n"), self.core.parse(sound + "`n", mode))
+        for mode, sound in [("pinyin", "zhg"), ("pinyin", "zhongg"),
+                            ("double_pinyin", "vsg"), ("mspy", "y;g"),
+                            ("pinyin", "'jilu"), ("pinyin", "ji''lu"),
+                            ("pinyin", "jilu'")]:
+            self.assertIsNone(self.core.parse(sound + "`n", mode), (mode, sound))
+        for text, sound, mode, preedit in [
+                ("记录", "jilu", "pinyin", "ji lu"), ("纪录", "jilu", "mspy", "ji lu"),
+                ("西安", "xi'an", "pinyin", "xi an"), ("虐待", "nuedai", "pinyin", "nue dai"),
+                ("应该", "y;gl", "mspy", "y; gl"), ("中国人", "vsgorf", "double_pinyin", "vs go rf"),
+                ("般若", "bore", "pinyin", "bo re"), ("六安", "luan", "pinyin", "lu an")]:
+            self.assertTrue(self.core.matches_word(text, sound, mode, preedit), (text, sound, mode))
+        for text, sound, preedit in [("记录", "jl", "j l"), ("记录", "jil", "ji l"),
+                                     ("记录仪", "jilu", "ji lu"), ("记", "jilu", "ji lu"),
+                                     ("记录", "ji'lu'", "ji lu"), ("西安", "x'ian", "x ian")]:
+            self.assertFalse(self.core.matches_word(text, sound, "pinyin", preedit), (text, sound))
+        self.assertNotEqual(self.core.first_strokes("记录"), self.core.first_strokes("纪录"))
+        self.assertEqual(self.core.first_strokes("权利"), self.core.first_strokes("权力"))
+
+    def test_sampled_dictionary_words_in_all_modes(self):
+        rules = {mode: json.loads((ROOT / "data" / name).read_text()) for mode, name in [
+            ("double_pinyin", "natural_double_pinyin.json"), ("mspy", "microsoft_double_pinyin.json")]}
+        for index, (word, pinyin, _) in enumerate(build.dictionary_rows(ROOT / "cn_dicts/suibi_words.dict.yaml")):
+            if index % 997:
+                continue
+            spellings = {"pinyin": pinyin.split()}
+            for mode, algebra in rules.items():
+                spellings[mode] = [next(code for code in build.double_codes(py, algebra) if len(code) == 2)
+                                   for py in pinyin.split()]
+            for mode, codes in spellings.items():
+                sound = "".join(codes)
+                self.assertTrue(self.core.valid_sound(sound, mode), (word, sound, mode))
+                self.assertTrue(self.core.matches_word(word, sound, mode, " ".join(codes)), (word, sound, mode))
+            self.assertEqual(self.strokes[word[0]], self.core.first_strokes(word))
+
     def test_syntax_and_aliases(self):
         self.assertEqual(("zhong", "phh"), self.core.parse("zhong`phh", "pinyin"))
         self.assertEqual(("vs", "phh"), self.core.parse("vs`phh", "double_pinyin"))
-        for code in ["zhongguo`ph", "zhong`a", "zhong``p", "Zhong`p"]:
+        for code in ["zhongg`ph", "zhong`a", "zhong``p", "Zhong`p"]:
             self.assertIsNone(self.core.parse(code, "pinyin"), code)
         self.assertEqual({r["text"] for r in self.lookup("nue", "", "pinyin")},
                          {r["text"] for r in self.lookup("nve", "", "pinyin")})

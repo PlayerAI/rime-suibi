@@ -14,7 +14,7 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 
 
 def sha256(path: Path) -> str:
@@ -88,14 +88,14 @@ def schema(mode: str, rules: list[str]) -> dict:
     return {
         "schema": {"schema_id": schema_id, "name": {"pinyin": "随笔全拼", "double_pinyin": "随笔双拼（自然码）", "mspy": "随笔微软双拼"}[mode],
                    "version": VERSION, "author": ["Suibi contributors"],
-                   "description": "简体拼音输入，反引号后按 h/s/p/n/z 补充单字笔画。"},
+                   "description": "简体拼音输入，反引号后按 h/s/p/n/z 补充单字或词语首字笔画。"},
         "switches": [{"name": "ascii_mode", "reset": 0, "states": ["中文", "西文"]}],
         "engine": {
             "processors": ["lua_processor@*suibi.processor", "ascii_composer", "recognizer",
                            "key_binder", "speller", "punctuator", "selector", "navigator", "express_editor"],
             "segmentors": ["ascii_segmentor", "lua_segmentor@*suibi.segmentor", "matcher",
                            "abc_segmentor", "punct_segmentor", "fallback_segmentor"],
-            "translators": ["lua_translator@*suibi.translator", "punct_translator", "script_translator"],
+            "translators": ["lua_translator@*suibi.translator", "punct_translator"],
             "filters": ["lua_filter@*suibi.filter", "uniquifier"],
         },
         "suibi": {"mode": mode},

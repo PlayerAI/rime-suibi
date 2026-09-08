@@ -6,7 +6,7 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 
 
 def main():
@@ -25,7 +25,7 @@ def main():
             payloads = {p.relative_to(ROOT).as_posix(): p.read_bytes() for p in selected}
             payloads["package.json"] = (json.dumps({"version": VERSION, "scheme": scheme}, indent=2) + "\n").encode()
             for relative, payload in sorted(payloads.items()):
-                info = zipfile.ZipInfo(f"{stem}/{relative}", date_time=(2026, 9, 6, 0, 0, 0))
+                info = zipfile.ZipInfo(f"{stem}/{relative}", date_time=(2026, 9, 8, 0, 0, 0))
                 info.compress_type = zipfile.ZIP_DEFLATED
                 info.external_attr = 0o644 << 16
                 stream.writestr(info, payload)

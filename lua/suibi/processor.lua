@@ -25,8 +25,11 @@ function M.func(key, env)
       ctx:push_input("`")
       return accepted
     end
-    -- Auxiliary mode is explicit and only starts at a complete single syllable.
-    if ctx.caret_pos == #input and core.readings(input, env.mode) then
+    -- Only an unselected, fully typed sound sequence may enter auxiliary mode.
+    local composition = ctx.composition
+    local segment = not composition:empty() and composition:back()
+    if ctx.caret_pos == #input and segment and segment.start == 0
+      and core.valid_sound(input, env.mode) then
       ctx:push_input("`")
     end
     return accepted
@@ -56,6 +59,9 @@ function M.func(key, env)
     if candidate and candidate.type == "suibi_aux" then
       env.engine:commit_text(candidate.text)
       ctx:clear()
+    elseif candidate and candidate.type == "suibi_word" then
+      ctx:confirm_current_selection()
+      ctx:commit()
     end
     return accepted
   end

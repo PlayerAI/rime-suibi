@@ -11,6 +11,8 @@ python -m unittest discover -s tests -v
 
 `--fetch` 仅在缓存不存在时下载固定版本上游词库；所有输入均校验 SHA-256。生成物不得直接手改。普通安装只需要 `requirements.txt` 的 PyYAML；运行输入法不需要 Python 或 Lupa。
 
+词语辅助修改需同时更新 Lua 与生成方案。当前版本为 v0.3.0。打包前统一更新构建和打包版本、文档链接及分发清单；历史平台验证不能代替新版本验证。
+
 ## 真实引擎测试
 
 测试创建独立 `.build/engine-*` 目录，编译三套方案与不加载随笔 Lua 的普通流程对照方案，不读取或修改实际用户词库。
@@ -47,7 +49,7 @@ python tools/install.py --target .build/install-preview --enable --dry-run
 python tools/package.py
 ```
 
-输出 `dist/rime-suibi-pinyin-0.2.0.zip`、`dist/rime-suibi-double-pinyin-0.2.0.zip`、`dist/rime-suibi-mspy-0.2.0.zip` 和 `dist/SHA256SUMS`。包内包括运行方案、GPL 正文、来源数据、构建工具和测试，不包括动态库、个人 Rime 数据、Git 元数据或密钥。每个 ZIP 只包含一个可安装方案，适用于三个平台，不提供独立 EXE/DEB 安装器。
+输出 `dist/rime-suibi-pinyin-0.3.0.zip`、`dist/rime-suibi-double-pinyin-0.3.0.zip`、`dist/rime-suibi-mspy-0.3.0.zip` 和 `dist/SHA256SUMS`。包内包括运行方案、GPL 正文、来源数据、构建工具和测试，不包括动态库、个人 Rime 数据、Git 元数据或密钥。每个 ZIP 只包含一个可安装方案，适用于三个平台，不提供独立 EXE/DEB 安装器。
 
 提交前查看 `git status --short`、生成一致性及暂存差异；仅纳入本任务路径。提交、推送和发布分别按用户授权执行。
 

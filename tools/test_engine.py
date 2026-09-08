@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run end-to-end key events against an isolated real librime. GPL-3.0-only."""
 import argparse
+import csv
 import json
 import platform
 import re
@@ -13,6 +14,118 @@ from pathlib import Path
 from rime_api import Rime
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_words(rime, schema):
+    with (ROOT / "data/sources/strokes.tsv").open(encoding="utf-8") as stream:
+        strokes = {row["character"]: row["digits"].translate(str.maketrans("12345", "hspnz"))
+                   for row in csv.DictReader(stream, delimiter="\t")}
+    passed = []
+    pinyin = schema == "suibi_pinyin"
+    queries = [("jilu", 2), ("quanli" if pinyin else "qrli", 2),
+               ("shiji" if pinyin else "uiji", 2),
+               ("zhongguoren" if pinyin else "vsgorf", 3)]
+    for sound, length in queries:
+        rime.select(schema + "_baseline")
+        rime.type(sound)
+        expected = [t for t, _ in rime.candidates() if len(t) == length]
+        assert expected, (schema, sound)
+        rime.select(schema)
+        first = strokes[expected[0][0]]
+        for suffix in ["", first[:1], first[:2], first[:3], first, "zzzzzzzzzz"]:
+            rime.clear()
+            rime.type(sound + "`" + suffix)
+            wanted = [t for t in expected if strokes[t[0]].startswith(suffix)]
+            actual = rime.candidates()
+            assert [t for t, _ in actual] == wanted, (schema, sound, suffix, wanted, actual)
+            assert all("首字 · " in c for _, c in actual), actual
+    passed.append(schema + ": full words preserve native order and filter first-stroke prefixes, including 3 characters")
+
+    rime.clear()
+    rime.type("jilu`n")
+    assert "记录" in [t for t, _ in rime.candidates()]
+    assert rime.preedit().endswith("`n"), rime.preedit()
+    assert "纪录" not in [t for t, _ in rime.candidates()]
+    rime.key(0xff0d)
+    assert rime.commit() == "记录" and not rime.input()
+    rime.type("jilu`z")
+    assert "纪录" in [t for t, _ in rime.candidates()]
+    rime.key(32)
+    assert rime.commit() == "纪录" and not rime.input()
+    rime.type(("quanli" if pinyin else "qrli") + "`" + strokes["权"])
+    assert {"权利", "权力"}.issubset({t for t, _ in rime.candidates()})
+    passed.append(schema + ": first-character distinction, same-first-character ambiguity, Enter and Space commit")
+
+    rime.clear()
+    sound = "shiji" if pinyin else "uiji"
+    rime.type(sound + "`")
+    rows = rime.candidates()
+    assert len(rows) > 5
+    rime.key(ord("="))
+    rime.key(ord("1"))
+    assert rime.commit() == rows[5][0] and not rime.input()
+    rime.type("jilu`nzz")
+    rime.key(ord("a"))
+    rime.key(0xff51)
+    rime.key(0xffe1)
+    rime.key(0xffe1, 1 << 30)
+    assert rime.input() == "jilu`nzz" and not rime.commit()
+    for _ in range(4):
+        rime.key(0xff08)
+    assert rime.input() == "jilu" and "纪录" in [t for t, _ in rime.candidates()]
+    rime.clear()
+    rime.type("jilu`zzzzzzzzzz")
+    assert not rime.candidates()
+    for key in [32, 49, ord(";"), ord("."), 0xff0d, 0xff8d]:
+        rime.key(key)
+        assert not rime.commit() and rime.input() == "jilu`zzzzzzzzzz"
+    rime.key(0xff1b)
+    assert not rime.input()
+    passed.append(schema + ": word paging, editing, Shift and no-match submission safety")
+
+    cases = ([("xi'an", "西安"), ("lu'an", "六安"), ("bore", "般若"), ("nuedai", "虐待")]
+             if pinyin else [("xi'an", "西安"), ("lu'an", "六安")])
+    if schema == "suibi_mspy":
+        cases = [("xi'oj", "西安"), ("lu'oj", "六安"), ("y;gl", "应该")]
+    for code, word in cases:
+        rime.clear()
+        rime.type(code + "`" + strokes[word[0]][:3])
+        assert word in [t for t, _ in rime.candidates()], (schema, code, rime.candidates())
+    for code in (["zhg", "zhongg", "ji'l"] if pinyin else ["vsg", "ji'l"]):
+        rime.clear()
+        rime.type(code)
+        before_input = rime.input()
+        rime.key(96)
+        assert rime.input() == before_input, (schema, code, rime.input())
+    # Full pinyin that also spells one syllable keeps the old single-char mode.
+    if pinyin:
+        rime.clear()
+        rime.type("xian`")
+        assert all(len(t) == 1 for t, _ in rime.candidates())
+    passed.append(schema + ": explicit syllable separators, word readings, spelling aliases and incomplete-input rejection")
+
+    # Learn through the original phonetic entry, including after session restart.
+    rime.clear()
+    rime.type("jilu")
+    before = [t for t, _ in rime.candidates()]
+    target = {"suibi_pinyin": "辑录", "suibi_double_pinyin": "集录", "suibi_mspy": "冀鲁"}[schema]
+    assert before.index(target) > 0
+    for confirm in [32, 0xff0d, ord("1")]:
+        rime.clear()
+        rime.type("jilu`" + strokes[target[0]])
+        assert rime.candidates()[0][0] == target
+        rime.key(confirm)
+        assert rime.commit() == target and not rime.input()
+    rime.select(schema + "_baseline")
+    rime.type("jilu")
+    after = [t for t, _ in rime.candidates()]
+    assert after.index(target) < before.index(target), (schema, before[:10], after[:10])
+    rime.select(schema)
+    rime.type("jilu`")
+    assert [t for t, _ in rime.candidates()] == [t for t in after if len(t) == 2]
+    passed.append(schema + ": auxiliary word learning persists in ordinary Rime candidates")
+    rime.clear()
+    return passed
 
 
 def main():
@@ -28,6 +141,7 @@ def main():
         shutil.copyfile(path, user / path.name)
         if path.name.endswith(".schema.yaml"):
             baseline = re.sub(r"^\s*- lua_(?:processor|segmentor|translator|filter)@.*\n", "", path.read_text(encoding="utf-8"), flags=re.M)
+            baseline = baseline.replace("  translators:\n", "  translators:\n  - script_translator\n")
             baseline = re.sub(r"(schema_id: suibi_\w+)", r"\1_baseline", baseline)
             (user / path.name.replace(".schema.yaml", "_baseline.schema.yaml")).write_text(baseline, encoding="utf-8")
     for directory in ("cn_dicts", "lua"):
@@ -117,7 +231,8 @@ def main():
 
             rime.type(normal)
             rime.key(96)
-            assert rime.input() == normal, rime.input()
+            assert rime.input() == normal + "`", rime.input()
+            assert "中国" in [t for t, _ in rime.candidates()]
             rime.clear()
             rime.key(96)
             assert rime.input() == "`" and not rime.commit() and not rime.candidates()
@@ -144,13 +259,15 @@ def main():
             rime.set_option("ascii_mode", False)
             passed.append(schema + ": ASCII mode passes through")
 
-            for query in [sound, sound + "`p", sound + "`ph", sound + "`phh"] * 10:
+            for query in [sound, sound + "`p", sound + "`ph", sound + "`phh", "jilu`n", normal + "`s"] * 10:
                 rime.clear()
                 start = time.perf_counter()
                 rime.type(query)
                 rime.candidates(5)
                 samples.append((time.perf_counter() - start) * 1000)
             rime.clear()
+        for schema in ("suibi_pinyin", "suibi_double_pinyin", "suibi_mspy"):
+            passed.extend(test_words(rime, schema))
         # Full-pinyin spelling aliases and polyphonic characters.
         rime.select("suibi_pinyin")
         for sound, char in [("zhong", "重"), ("chong", "重"), ("lv", "吕"), ("nue", "虐")]:
@@ -159,6 +276,7 @@ def main():
             assert char in [t for t, _ in rime.candidates()], (sound, rime.candidates())
         passed.append("polyphonic readings and full-pinyin aliases")
         result = {"status": "passed", "platform": platform.platform(), "rime_version": rime.version(),
+                  "suibi_version": json.loads((ROOT / "data/build_stats.json").read_text())["version"],
                   "tests": passed, "test_count": len(passed), "deployment_seconds": round(deployment, 3),
                   "query_latency_ms": {"median": round(statistics.median(samples), 3),
                                        "p95": round(sorted(samples)[int(len(samples) * .95) - 1], 3),
