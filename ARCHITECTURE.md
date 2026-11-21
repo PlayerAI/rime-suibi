@@ -1,10 +1,10 @@
 # 实现结构
 
-本文记录 v0.3.0 的实际实现（新增词语首字辅助），核查日期 2026-09-08。
+本文记录 v0.4.0 的实际实现（数据改用万象拼音），核查日期 2026-11-21。
 
 ## 边界
 
-随笔是 Rime 方案与 librime-lua 模块，不修改前端或 librime。小狼毫和 Fcitx5-Rime 负责系统输入、候选窗口与部署。三套方案共享 `suibi` 用户词典，使用各自的拼写 prism；不依赖用户已安装的雾凇方案。
+随笔是 Rime 方案与 librime-lua 模块，不修改前端或 librime。小狼毫和 Fcitx5-Rime 负责系统输入、候选窗口与部署。三套方案共享 `suibi` 用户词典，使用各自的拼写 prism；不依赖用户已安装的雾凇或万象方案。
 
 普通拼音由 Lua translator 委托唯一的原生 `script_translator` 实例，支持组词、整句和用户词频。Lua filter 只限制汉字字集，不重排普通候选。单字和词语辅助均为完整全拼或自然码/微软双拼编码，后接反引号与零个或多个笔画字母；词语按首字笔顺过滤。
 
@@ -26,11 +26,11 @@
 | 可编辑来源 | 生成产物 |
 | --- | --- |
 | `tools/build.py` 中的方案构造 | 三个 `suibi_*.schema.yaml`、`suibi.dict.yaml` |
-| `data/sources/strokes.tsv`、`rime_ice_chars.dict.yaml` | `cn_dicts/suibi_chars.dict.yaml`、`lua/suibi/data.lua` |
+| `data/sources/strokes.tsv`、`wanxiang_zi.dict.yaml` | `cn_dicts/suibi_chars.dict.yaml`、`lua/suibi/data.lua` |
 | `data/natural_double_pinyin.json`、`data/microsoft_double_pinyin.json` | 双拼方案代数、Lua 双拼读音映射 |
-| 固定版本雾凇 `base.dict.yaml` | `cn_dicts/suibi_words.dict.yaml` |
+| 固定版本万象 `dicts/jichu.dict.yaml`、`dicts/duoyin.dict.yaml` | `cn_dicts/suibi_words.dict.yaml` |
 | 上述所有输入 | `data/build_stats.json` |
 
-原始大词库缓存于 `.cache/upstream/`，按 `data/sources.json` 的固定 URL 获取并验证哈希。所有生成产物随仓库保存，终端用户安装不需要 Python 构建流程。单方案安装脚本复制 10 个运行文件（三方案共 12 个）；备份、用户词库、编译缓存不属于版本源码。
+万象数据带声调，构建时去调、ü 写作 v，并按万象拼写代数把独立的 n/ng/m 写作 en/eng/me，因而音节集合与原有拼写代数及双拼映射一致。原始大词库缓存于 `.cache/upstream/`，按 `data/sources.json` 的固定 URL 获取并验证哈希。所有生成产物随仓库保存，终端用户安装不需要 Python 构建流程。单方案安装脚本复制 10 个运行文件（三方案共 12 个）；备份、用户词库、编译缓存不属于版本源码。
 
 反查模式为反引号加笔顺前缀，不依赖读音。生成的 `data.reverse` 覆盖全部 8105 字，包含字频和所有已收录无声调拼音；缺读音时仍可查字。反引号后无笔画时不生成候选，双反引号输出字面符号。独立包的 `package.json` 限定默认安装方案；共用数据使不同方案可同时安装。

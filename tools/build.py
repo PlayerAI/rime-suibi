@@ -7,6 +7,7 @@ import csv
 import hashlib
 import json
 import re
+import unicodedata
 import urllib.request
 from collections import defaultdict
 from pathlib import Path
@@ -14,14 +15,25 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.3.0"
+VERSION = "0.4.0"
+# Wanxiang writes interjection syllables without vowels; its own algebra
+# (wanxiang_algebra.yaml, 全拼) spells the bare forms n/ng/m as en/eng/me.
+BARE_SYLLABLES = {"n": "en", "ng": "eng", "m": "me", "lue": "lve", "nue": "nve"}
 
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def dictionary_rows(path: Path):
+def toneless(reading: str) -> str:
+    """Convert a tone-marked Wanxiang reading to Suibi's plain pinyin."""
+    plain = unicodedata.normalize("NFD", reading.lower()).replace("u\u0308", "v")
+    plain = "".join(c for c in plain if not unicodedata.combining(c)).lower()
+    return " ".join(BARE_SYLLABLES.get(py, py) for py in plain.split())
+
+
+def dictionary_rows(path: Path, tones: bool = False):
+    """Yield (word, pinyin, weight); Wanxiang rows may omit the weight."""
     active = False
     with path.open(encoding="utf-8-sig") as stream:
         for line in stream:
@@ -32,9 +44,15 @@ def dictionary_rows(path: Path):
             if not active or not line or line.startswith("#"):
                 continue
             cells = line.split("\t")
+            if tones and len(cells) == 2:
+                cells.append("0")
             if len(cells) != 3:
                 raise ValueError(f"Invalid dictionary row: {path}: {line!r}")
             word, pinyin, weight = cells
+            if tones:
+                pinyin = toneless(pinyin)
+                # Upstream has rare typos such as "10s"; Rime reads the leading number.
+                weight = re.match(r"\d*", weight).group() or "0"
             if not re.fullmatch(r"[a-z]+(?: [a-z]+)*", pinyin):
                 raise ValueError(f"Invalid reading: {pinyin!r}")
             yield word, pinyin, int(weight)
@@ -59,6 +77,28 @@ def double_codes(pinyin: str, rules: list[str]) -> list[str]:
     return states
 
 
+def wanxiang_path(name: str) -> Path:
+    manifest = json.loads((ROOT / "data/sources.json").read_text(encoding="utf-8"))
+    return ROOT / ".cache/upstream" / f"wanxiang-{manifest['wanxiang']['commit']}" / f"{name}.dict.yaml"
+
+
+def fetch_wanxiang(fetch: bool) -> None:
+    manifest = json.loads((ROOT / "data/sources.json").read_text(encoding="utf-8"))["wanxiang"]
+    for name, entry in manifest["files"].items():
+        path = wanxiang_path(name)
+        if not path.exists():
+            if not fetch:
+                raise FileNotFoundError("Wanxiang dictionary cache missing. Run: python tools/build.py --fetch")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            request = urllib.request.Request(entry["url"], headers={"User-Agent": "rime-suibi-build"})
+            payload = urllib.request.urlopen(request, timeout=300).read()
+            if hashlib.sha256(payload).hexdigest() != entry["sha256"]:
+                raise ValueError(f"Downloaded Wanxiang {name} hash mismatch")
+            path.write_bytes(payload)
+        if sha256(path) != entry["sha256"]:
+            raise ValueError(f"Cached Wanxiang {name} hash mismatch")
+
+
 def load_characters():
     with (ROOT / "data/sources/strokes.tsv").open(encoding="utf-8") as f:
         rows = list(csv.DictReader(f, delimiter="\t"))
@@ -72,7 +112,7 @@ def load_characters():
     if len(strokes) != 8105:
         raise ValueError("Duplicate stroke characters")
     entries = {}
-    for char, py, weight in dictionary_rows(ROOT / "data/sources/rime_ice_chars.dict.yaml"):
+    for char, py, weight in dictionary_rows(ROOT / "data/sources/wanxiang_zi.dict.yaml", tones=True):
         if char in strokes:
             entries[(char, py)] = max(weight, entries.get((char, py), 0))
     return strokes, entries
@@ -126,18 +166,7 @@ def make_files(fetch: bool = False) -> tuple[dict[str, str], dict]:
     for entry in manifest["inputs"]:
         if sha256(ROOT / entry["path"]) != entry["sha256"]:
             raise ValueError(f"Source hash mismatch: {entry['path']}")
-    base = ROOT / ".cache/upstream/base.dict.yaml"
-    if not base.exists():
-        if not fetch:
-            raise FileNotFoundError("Base dictionary cache missing. Run: python tools/build.py --fetch")
-        base.parent.mkdir(parents=True, exist_ok=True)
-        request = urllib.request.Request(manifest["base_dictionary"]["url"], headers={"User-Agent": "rime-suibi-build"})
-        payload = urllib.request.urlopen(request, timeout=90).read()
-        if hashlib.sha256(payload).hexdigest() != manifest["base_dictionary"]["sha256"]:
-            raise ValueError("Downloaded base dictionary hash mismatch")
-        base.write_bytes(payload)
-    if sha256(base) != manifest["base_dictionary"]["sha256"]:
-        raise ValueError("Cached base dictionary hash mismatch")
+    fetch_wanxiang(fetch)
     strokes, entries = load_characters()
     rules = json.loads((ROOT / "data/natural_double_pinyin.json").read_text(encoding="utf-8"))
     by_py = defaultdict(list)
@@ -176,7 +205,8 @@ def make_files(fetch: bool = False) -> tuple[dict[str, str], dict]:
         lua.append(f"data.allowed[{q(char)}] = true")
     lua.append("return data")
     files = {"lua/suibi/data.lua": "\n".join(lua) + "\n"}
-    header = "# GENERATED by tools/build.py; do not edit.\n# GPL-3.0; derived from iDvel/rime-ice. See NOTICE.md.\n"
+    header = ("# GENERATED by tools/build.py; do not edit.\n"
+              "# GPL-3.0; data derived from amzxyz/rime-wanxiang (CC BY 4.0) and iDvel/rime-ice. See NOTICE.md.\n")
     for mode in ["pinyin", "double_pinyin", "mspy"]:
         obj = schema(mode, ms_rules if mode == "mspy" else rules)
         files[obj["schema"]["schema_id"] + ".schema.yaml"] = header + yaml.safe_dump(obj, allow_unicode=True, sort_keys=False, width=120)
@@ -185,17 +215,21 @@ def make_files(fetch: bool = False) -> tuple[dict[str, str], dict]:
     files["suibi.dict.yaml"] = header + f"---\nname: suibi\nversion: '{VERSION}'\nsort: by_weight\nimport_tables:\n  - cn_dicts/suibi_chars\n  - cn_dicts/suibi_words\n...\n"
     files["cn_dicts/suibi_chars.dict.yaml"] = dict_header("suibi_chars") + "".join(
         f"{char}\t{py}\t{weight}\n" for (char, py), weight in sorted(entries.items(), key=lambda e: (e[0][1], -e[1], e[0][0])))
-    words, dropped = [], 0
+    merged, dropped, upstream = {}, 0, 0
     known_py = set(by_py)
-    for word, py, weight in dictionary_rows(base):
-        if len(word) >= 2 and all(c in strokes for c in word) and all(p in known_py for p in py.split()):
-            words.append(f"{word}\t{py}\t{weight}\n")
-        else:
-            dropped += 1
+    for name in manifest["wanxiang"]["word_tables"]:
+        for word, py, weight in dictionary_rows(wanxiang_path(name), tones=True):
+            upstream += 1
+            if len(word) >= 2 and all(c in strokes for c in word) and all(p in known_py for p in py.split()):
+                merged[(word, py)] = max(weight, merged.get((word, py), weight))
+            else:
+                dropped += 1
+    words = [f"{word}\t{py}\t{weight}\n" for (word, py), weight in merged.items()]
     files["cn_dicts/suibi_words.dict.yaml"] = dict_header("suibi_words") + "".join(words)
     stats = {"version": VERSION, "allowed_characters": len(strokes), "characters_with_readings": len({c for c, p in entries}),
              "character_readings": len(entries), "pinyin_syllables": len(by_py), "double_pinyin_codes": len(by_code),
-             "words": len(words), "excluded_upstream_words": dropped,
+             "words": len(words), "upstream_word_rows": upstream, "excluded_upstream_words": dropped,
+             "merged_duplicate_words": upstream - dropped - len(words),
              "missing_readings": sorted(set(strokes) - {c for c, p in entries})}
     files["data/build_stats.json"] = json.dumps(stats, ensure_ascii=False, indent=2) + "\n"
     return files, stats
@@ -203,7 +237,7 @@ def make_files(fetch: bool = False) -> tuple[dict[str, str], dict]:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--fetch", action="store_true", help="Fetch pinned upstream dictionary when absent")
+    parser.add_argument("--fetch", action="store_true", help="Fetch pinned Wanxiang word tables when absent")
     parser.add_argument("--check", action="store_true", help="Verify generated files without modifying them")
     args = parser.parse_args()
     files, stats = make_files(args.fetch)

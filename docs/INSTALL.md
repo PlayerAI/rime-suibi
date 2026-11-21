@@ -1,8 +1,8 @@
-# 安装随笔 v0.3.0
+# 安装随笔 v0.4.0
 
-**v0.3.0 新增词语首字辅助。升级时执行安装命令后重新部署；更新需同时复制方案 YAML 和 Lua 文件。**
+**v0.4.0 改用万象拼音词库（约 156 万词条）。升级时执行安装命令后重新部署；更新需同时复制方案 YAML、词库和 Lua 文件。首次部署编译词库比旧版耗时更长，属正常现象。**
 
-每种方案各有一个独立包，每包均适用于 Windows、CachyOS 和 Debian。安装前需有支持 librime-lua 模块的 Rime 前端。下列命令安装系统依赖；随笔文件本身安装到当前用户目录，无需管理员权限。选择全拼 `rime-suibi-pinyin-0.3.0.zip`、自然码 `rime-suibi-double-pinyin-0.3.0.zip` 或微软 `rime-suibi-mspy-0.3.0.zip`。下载源码或解压所选包后，在包含 README 的目录执行随笔安装命令。
+每种方案各有一个独立包，每包均适用于 Windows、CachyOS 和 Debian。安装前需有支持 librime-lua 模块的 Rime 前端。下列命令安装系统依赖；随笔文件本身安装到当前用户目录，无需管理员权限。选择全拼 `rime-suibi-pinyin-0.4.0.zip`、自然码 `rime-suibi-double-pinyin-0.4.0.zip` 或微软 `rime-suibi-mspy-0.4.0.zip`。下载源码或解压所选包后，在包含 README 的目录执行随笔安装命令。
 
 ## Windows
 

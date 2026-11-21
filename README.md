@@ -26,13 +26,13 @@
 
 ## 安装与试用
 
-当前版本 **v0.3.0**，新增词语首字笔画辅助，保留原生候选排序和选词学习。升级后需重新部署；安装器会同时更新方案 YAML 与 Lua。选择自己熟悉的方案下载：
+当前版本 **v0.4.0**，字音、字频与词库改用[万象拼音](https://github.com/amzxyz/rime-wanxiang)数据，词条增至约 156 万。升级后需重新部署；安装器会同时更新方案 YAML、词库与 Lua。首次部署编译大词库需要稍长时间。选择自己熟悉的方案下载：
 
 | 方案 | 独立安装包 | 方案标识 |
 | --- | --- | --- |
-| 随笔全拼 | [下载 ZIP](https://github.com/PlayerAI/rime-suibi/raw/refs/heads/main/dist/rime-suibi-pinyin-0.3.0.zip) | `suibi_pinyin` |
-| 随笔双拼（自然码） | [下载 ZIP](https://github.com/PlayerAI/rime-suibi/raw/refs/heads/main/dist/rime-suibi-double-pinyin-0.3.0.zip) | `suibi_double_pinyin` |
-| 随笔微软双拼 | [下载 ZIP](https://github.com/PlayerAI/rime-suibi/raw/refs/heads/main/dist/rime-suibi-mspy-0.3.0.zip) | `suibi_mspy` |
+| 随笔全拼 | [下载 ZIP](https://github.com/PlayerAI/rime-suibi/raw/refs/heads/main/dist/rime-suibi-pinyin-0.4.0.zip) | `suibi_pinyin` |
+| 随笔双拼（自然码） | [下载 ZIP](https://github.com/PlayerAI/rime-suibi/raw/refs/heads/main/dist/rime-suibi-double-pinyin-0.4.0.zip) | `suibi_double_pinyin` |
+| 随笔微软双拼 | [下载 ZIP](https://github.com/PlayerAI/rime-suibi/raw/refs/heads/main/dist/rime-suibi-mspy-0.4.0.zip) | `suibi_mspy` |
 
 每包均适用于 Windows、CachyOS 和 Debian，包含所选方案、完整词库、Lua 文件与源码，无需另外安装其他随笔方案。[SHA-256 校验清单](dist/SHA256SUMS)。
 
@@ -79,9 +79,9 @@ python tools/install.py --scheme suibi_mspy --enable
 
 ## 数据与验证
 
-字集限定为《通用规范汉字表》的 8,105 字（含简繁共用字），其中 **8,104 字、8,676 个字音、540,478 条词语**进入拼音词库。来源缺少“呣”的可用普通拼音读音，笔画反查仍可找到它，旁注“读音未收录”。
+字集限定为《通用规范汉字表》的 8,105 字（含简繁共用字），**8,105 字全部有读音，共 9,143 个字音、1,562,075 条词语**进入拼音词库。数据来自万象拼音的字表、基础词库和多音词库，构建时去除声调。
 
-历史 v0.2.0 在小狼毫 0.17.4 / librime 1.13.1 和 Debian 13 / WSL2 各通过 28 项实际引擎检查，另有 12 项核心与安装测试通过；微软双拼 v0.2.0 已在本机小狼毫安装并成功部署。详情见 [验证记录](docs/STATUS.md)。v0.3.0 已在 CachyOS / librime 1.17.0 通过 43 项隔离引擎检查及 14 项核心与安装测试；桌面应用集成仍待人工试用。
+历史 v0.2.0 在小狼毫 0.17.4 / librime 1.13.1 和 Debian 13 / WSL2 各通过 28 项实际引擎检查，另有 12 项核心与安装测试通过；微软双拼 v0.2.0 已在本机小狼毫安装并成功部署。详情见 [验证记录](docs/STATUS.md)。v0.3.0 已在 CachyOS / librime 1.17.0 通过 43 项隔离引擎检查及 14 项核心与安装测试。v0.4.0 换用万象词库后，在同一环境重新通过 43 项引擎检查和 14 项核心与安装测试；Windows、Debian 与桌面应用集成仍待验证。
 
 单字辅助和反查候选按静态字频排序，暂不学习个人选字习惯；普通拼音及词语辅助使用 Rime 用户词典学习。这里“学拼音”指通过候选注释了解读音。当前不支持指定任意字位补笔、字表外汉字或声调标注。
 
@@ -91,4 +91,4 @@ python tools/install.py --scheme suibi_mspy --enable
 
 ## 开源许可
 
-项目采用 **GNU GPL v3.0（GPL-3.0-only）**，详见 [LICENSE](LICENSE)。感谢 Rime、雾凇拼音及其数据贡献者。第三方署名、原始来源和修改说明见 [NOTICE.md](NOTICE.md)，输入文件版本与 SHA-256 见 [data/sources.json](data/sources.json)。
+项目采用 **GNU GPL v3.0（GPL-3.0-only）**，详见 [LICENSE](LICENSE)。感谢 Rime、万象拼音、雾凇拼音及其数据贡献者。万象数据采用 CC BY 4.0，改编后随本项目分发。第三方署名、原始来源和修改说明见 [NOTICE.md](NOTICE.md)，输入文件版本与 SHA-256 见 [data/sources.json](data/sources.json)。

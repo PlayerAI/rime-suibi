@@ -8,6 +8,9 @@ dist/*
 !dist/rime-suibi-pinyin-0.3.0.zip
 !dist/rime-suibi-double-pinyin-0.3.0.zip
 !dist/rime-suibi-mspy-0.3.0.zip
+!dist/rime-suibi-pinyin-0.4.0.zip
+!dist/rime-suibi-double-pinyin-0.4.0.zip
+!dist/rime-suibi-mspy-0.4.0.zip
 !dist/SHA256SUMS
 __pycache__/
 *.pyc
